@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArrowsMail</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d0d1a;color:#fff;height:100vh;overflow:hidden;}
+#root{height:100vh;display:flex;}
+
+/* ── Auth ── */
+.auth-bg{flex:1;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%,#1a1040 0%,#0a0a18 60%,#080810 100%);}
+.auth-card{background:#111120;border:1px solid rgba(255,255,255,.08);border-radius:18px;
+  padding:44px 40px;width:420px;box-shadow:0 32px 80px rgba(0,0,0,.7);}
+.logo{text-align:center;margin-bottom:30px;}
+.logo-icon{font-size:58px;display:block;margin-bottom:10px;
+  filter:drop-shadow(0 0 24px rgba(91,141,238,.9));}
+.logo h1{font-size:28px;font-weight:900;letter-spacing:-1px;
+  background:linear-gradient(135deg,#6fa3ff,#a855f7 60%,#e879c7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo p{color:#444;font-size:13px;margin-top:5px;}
+.tabs{display:flex;gap:4px;background:#080814;border-radius:9px;padding:4px;margin-bottom:24px;}
+.tab{flex:1;padding:9px;text-align:center;border-radius:7px;cursor:pointer;
+  font-size:14px;font-weight:600;color:#555;transition:all .2s;}
+.tab.on{background:linear-gradient(135deg,#5b8dee,#a855f7);color:#fff;}
+.inp{display:block;width:100%;padding:12px 14px;background:#080814;
+  border:1.5px solid rgba(255,255,255,.07);border-radius:9px;color:#eee;
+  font-size:15px;margin-bottom:12px;outline:none;transition:border-color .2s;font-family:inherit;}
+.inp:focus{border-color:#5b8dee;}
+.inp::placeholder{color:#333;}
+.btn-p{display:block;width:100%;padding:13px;
+  background:linear-gradient(135deg,#5b8dee,#a855f7);
+  border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;letter-spacing:.3px;transition:opacity .2s;font-family:inherit;}
+.btn-p:hover{opacity:.87;}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;}
+.auth-err{color:#ff7070;font-size:12.5px;
+  background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.15);
+  border-radius:7px;padding:10px 13px;margin-bottom:13px;}
+
+/* ── Layout ── */
+.layout{display:flex;flex:1;min-height:0;overflow:hidden;}
+
+/* ── Sidebar ── */
+.sidebar{width:256px;background:#0a0a15;display:flex;flex-direction:column;
+  border-right:1px solid rgba(255,255,255,.04);flex-shrink:0;}
+.sb-head{height:54px;padding:0 16px;display:flex;align-items:center;
+  justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.04);
+  box-shadow:0 2px 8px rgba(0,0,0,.5);}
+.sb-head .brand{font-size:15px;font-weight:900;letter-spacing:-.3px;
+  background:linear-gradient(135deg,#6fa3ff,#a855f7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sb-add{width:28px;height:28px;border-radius:50%;background:rgba(91,141,238,.12);
+  border:none;color:#5b8dee;font-size:22px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.sb-add:hover{background:rgba(91,141,238,.28);}
+.sb-scroll{flex:1;overflow-y:auto;padding:8px 0 4px;}
+.sb-scroll::-webkit-scrollbar{width:5px;}
+.sb-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px;}
+.sb-label{padding:10px 16px 5px;font-size:10.5px;font-weight:700;
+  color:#3a3a5a;text-transform:uppercase;letter-spacing:1.2px;}
+.ch-row{display:flex;align-items:center;gap:9px;padding:7px 10px;
+  margin:1px 6px;border-radius:7px;cursor:pointer;transition:background .12s;}
+.ch-row:hover{background:rgba(255,255,255,.04);}
+.ch-row.act{background:rgba(91,141,238,.16);}
+.ch-sym{font-size:15px;font-weight:800;color:#3a3a60;width:24px;text-align:center;flex-shrink:0;}
+.ch-row.act .ch-sym{color:#6fa3ff;}
+.ch-nm{font-size:14px;color:#5a5a80;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ch-row.act .ch-nm{color:#dde0f8;font-weight:600;}
+.user-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:#07070f;border-top:1px solid rgba(255,255,255,.04);}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
+.u-name{font-size:13.5px;font-weight:700;color:#c0c4e0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.u-tag{font-size:11px;color:#3a3a60;}
+.logout{background:none;border:none;color:#3a3a60;cursor:pointer;
+  font-size:18px;transition:color .2s;padding:2px 3px;line-height:1;}
+.logout:hover{color:#ff7070;}
+
+/* ── Chat ── */
+.chat{flex:1;display:flex;flex-direction:column;background:#111119;min-width:0;}
+.chat-head{height:54px;padding:0 22px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.04);box-shadow:0 2px 8px rgba(0,0,0,.4);
+  flex-shrink:0;background:#111119;}
+.chat-head .h-sym{font-size:19px;color:#3a3a60;}
+.chat-head .h-nm{font-size:16px;font-weight:700;color:#e0e4ff;}
+.chat-head .h-meta{font-size:12px;color:#3a3a60;margin-left:auto;}
+.msgs{flex:1;overflow-y:auto;padding:12px 0 6px;}
+.msgs::-webkit-scrollbar{width:8px;}
+.msgs::-webkit-scrollbar-track{background:transparent;}
+.msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:4px;}
+
+.sys-line{text-align:center;padding:5px 20px;font-size:12px;color:#333;font-style:italic;}
+.divider{display:flex;align-items:center;gap:12px;padding:12px 22px;}
+.divider hr{flex:1;border:none;border-top:1px solid rgba(255,255,255,.04);}
+.divider span{font-size:11px;color:#333;white-space:nowrap;}
+
+.msg-grp{display:flex;gap:14px;padding:4px 22px;}
+.msg-grp:hover{background:rgba(255,255,255,.012);}
+.msg-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;margin-top:2px;}
+.msg-body{flex:1;min-width:0;}
+.msg-hdr{display:flex;align-items:baseline;gap:10px;margin-bottom:3px;}
+.msg-author{font-size:15px;font-weight:700;}
+.msg-ts{font-size:11px;color:#333;}
+.msg-text{font-size:14.5px;color:#b8bcd8;line-height:1.58;word-wrap:break-word;white-space:pre-wrap;}
+.msg-cont{display:flex;gap:14px;padding:1px 22px;}
+.msg-cont:hover{background:rgba(255,255,255,.012);}
+.msg-pad{width:38px;flex-shrink:0;}
+.msg-text-only{font-size:14.5px;color:#b8bcd8;line-height:1.58;word-wrap:break-word;white-space:pre-wrap;flex:1;}
+
+.welcome-box{padding:30px 22px 20px;border-bottom:1px solid rgba(255,255,255,.04);margin-bottom:8px;}
+.welcome-box .w-icon{font-size:56px;margin-bottom:12px;display:block;}
+.welcome-box h2{font-size:22px;font-weight:900;color:#e0e4ff;margin-bottom:6px;}
+.welcome-box p{font-size:14px;color:#333;}
+
+.input-area{padding:0 22px 20px;flex-shrink:0;}
+.input-wrap{display:flex;align-items:flex-end;gap:10px;
+  background:#1a1a28;border-radius:11px;padding:11px 14px;
+  border:1.5px solid rgba(255,255,255,.05);}
+.input-wrap:focus-within{border-color:rgba(91,141,238,.3);}
+.msg-inp{flex:1;background:none;border:none;color:#dde0f8;font-size:14.5px;
+  outline:none;resize:none;min-height:22px;max-height:120px;line-height:1.55;font-family:inherit;}
+.msg-inp::placeholder{color:#2e2e4a;}
+.send-btn{width:34px;height:34px;background:linear-gradient(135deg,#5b8dee,#a855f7);
+  border:none;border-radius:8px;color:#fff;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s;}
+.send-btn:hover{opacity:.85;}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+.no-ch{flex:1;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:14px;}
+.no-ch span{font-size:60px;opacity:.3;}
+.no-ch p{font-size:15px;color:#333;}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);
+  display:flex;align-items:center;justify-content:center;z-index:200;}
+.modal{background:#171724;border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:30px;width:440px;
+  box-shadow:0 24px 80px rgba(0,0,0,.7);}
+.modal h3{font-size:19px;font-weight:800;margin-bottom:22px;color:#e0e4ff;}
+.modal label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.9px;color:#3a3a60;margin-bottom:7px;}
+.modal .inp{margin-bottom:16px;}
+.type-row{display:flex;gap:10px;margin-bottom:16px;}
+.type-card{flex:1;padding:14px 10px;border:2px solid rgba(255,255,255,.06);
+  border-radius:9px;cursor:pointer;text-align:center;transition:all .15s;}
+.type-card:hover{border-color:rgba(91,141,238,.3);}
+.type-card.on{border-color:#5b8dee;background:rgba(91,141,238,.1);}
+.type-card .ti{font-size:26px;display:block;margin-bottom:5px;}
+.type-card .tn{font-size:12px;font-weight:700;color:#555;}
+.type-card.on .tn{color:#7aa3f1;}
+.tags-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+  background:#080814;border:1.5px solid rgba(255,255,255,.07);border-radius:9px;
+  padding:7px 10px;margin-bottom:16px;min-height:42px;cursor:text;}
+.tag{background:rgba(91,141,238,.15);border:1px solid rgba(91,141,238,.3);
+  border-radius:5px;padding:2px 8px;font-size:12.5px;color:#7aa3f1;
+  display:flex;align-items:center;gap:5px;}
+.tag button{background:none;border:none;color:#7aa3f1;cursor:pointer;font-size:15px;
+  line-height:1;padding:0;transition:color .15s;}
+.tag button:hover{color:#ff7070;}
+.tag-inp{background:none;border:none;color:#ccc;outline:none;
+  font-size:13px;flex:1;min-width:80px;font-family:inherit;}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
+.btn-cancel{padding:9px 20px;background:rgba(255,255,255,.05);border:none;
+  border-radius:7px;color:#888;cursor:pointer;font-size:14px;font-weight:600;
+  font-family:inherit;transition:background .15s;}
+.btn-cancel:hover{background:rgba(255,255,255,.1);}
+.btn-go{padding:9px 24px;background:linear-gradient(135deg,#5b8dee,#a855f7);
+  border:none;border-radius:7px;color:#fff;cursor:pointer;font-size:14px;
+  font-weight:700;font-family:inherit;transition:opacity .2s;}
+.btn-go:hover{opacity:.88;}
+.modal-err{font-size:12.5px;color:#ff7070;margin-bottom:12px;
+  background:rgba(255,80,80,.08);border-radius:6px;padding:8px 12px;}
+
+/* ── Owner / Moderation ── */
+.owner-badge{font-size:13px;margin-left:5px;vertical-align:middle;
+  filter:drop-shadow(0 0 6px gold);}
+.muted-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;
+  background:rgba(255,80,80,.15);color:#ff7070;border:1px solid rgba(255,80,80,.25);
+  margin-left:6px;vertical-align:middle;letter-spacing:.5px;}
+.muted-bar{display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);
+  border-radius:9px;padding:12px 16px;color:#ff7070;font-size:14px;}
+.ctx-menu{position:fixed;background:#1e1e2e;border:1px solid rgba(255,255,255,.1);
+  border-radius:9px;padding:6px;z-index:300;min-width:160px;
+  box-shadow:0 8px 32px rgba(0,0,0,.7);}
+.ctx-item{padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;gap:9px;transition:background .12s;}
+.ctx-item:hover{background:rgba(255,255,255,.06);}
+.ctx-item.danger{color:#ff7070;}
+.ctx-item.danger:hover{background:rgba(255,80,80,.12);}
+.ctx-item.warn{color:#fdcb6e;}
+.ctx-item.warn:hover{background:rgba(253,203,110,.1);}
+
+/* ── Setup screen ── */
+.setup-steps{color:#555;font-size:14px;line-height:1.9;margin-top:8px;}
+.setup-steps ol{padding-left:20px;}
+.setup-steps li{margin-bottom:2px;}
+.setup-highlight{color:#5b8dee;font-weight:700;}
+.setup-code{color:#a855f7;font-family:monospace;font-size:13px;background:rgba(168,85,247,.08);
+  padding:1px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ═══════════════════════════════════════════════════════════════
+   CONSTANTS & HELPERS
+═══════════════════════════════════════════════════════════════ */
+const OWNER = 'Da Korok';
+
+const AV_COLORS = [
+  '#5b8dee','#a855f7','#43b581','#e17055',
+  '#fdcb6e','#74b9ff','#fd79a8','#00cec9',
+  '#e84393','#26de81','#fc5c65','#fd9644',
+];
+
+function avColor(username) {
+  let h = 0;
+  for (const c of username) h = (h * 31 + c.charCodeAt(0)) % AV_COLORS.length;
+  return AV_COLORS[h];
+}
+
+function genId() {
+  return Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+}
+
+function fmtTimestamp(ts) {
+  const d = new Date(ts), n = new Date();
+  const t = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (d.toDateString() === n.toDateString()) return `Today at ${t}`;
+  const y = new Date(n); y.setDate(n.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return `Yesterday at ${t}`;
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' at ' + t;
+}
+
+function fmtDateLabel(ts) {
+  const d = new Date(ts), n = new Date();
+  if (d.toDateString() === n.toDateString()) return 'Today';
+  const y = new Date(n); y.setDate(n.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FIREBASE CONFIG
+   ───────────────────────────────────────────────────────────────
+   1. Go to https://console.firebase.google.com
+   2. Create a project → Add Web App → copy the config object
+   3. Build → Realtime Database → Create database (choose Test Mode)
+   4. Paste your values into FIREBASE_CONFIG below, save & reopen
+═══════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBx4BtqntyZuL2BLE-8OGVRf8rEqG-C9jM",
+  authDomain:        "arrowmail-4fbea.firebaseapp.com",
+  databaseURL:       "https://arrowmail-4fbea-default-rtdb.firebaseio.com",
+  projectId:         "arrowmail-4fbea",
+  storageBucket:     "arrowmail-4fbea.firebasestorage.app",
+  messagingSenderId: "18899897828",
+  appId:             "1:18899897828:web:bd6044fe5dfe61a0b90bf1",
+};
+const SETUP_NEEDED = FIREBASE_CONFIG.apiKey === "YOUR_API_KEY";
+let FB;
+if (!SETUP_NEEDED) {
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  FB = firebase.database();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MESSAGE GROUPING
+═══════════════════════════════════════════════════════════════ */
+function groupMessages(msgs) {
+  const out = [];
+  let cur = null;
+  for (const m of msgs) {
+    if (m.sys) { out.push({ sys: true, msg: m }); cur = null; continue; }
+    const prev = cur && cur.msgs[cur.msgs.length - 1];
+    if (cur && cur.author === m.author && m.ts - prev.ts < 5 * 60 * 1000) {
+      cur.msgs.push(m);
+    } else {
+      cur = { author: m.author, msgs: [m] };
+      out.push(cur);
+    }
+  }
+  return out;
+}
+
+function insertDividers(groups) {
+  const out = [];
+  let lastDate = '';
+  for (const g of groups) {
+    const ts = g.sys ? g.msg.ts : g.msgs[0].ts;
+    const label = fmtDateLabel(ts);
+    if (label !== lastDate) { out.push({ divider: true, label }); lastDate = label; }
+    out.push(g);
+  }
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETUP SCREEN
+═══════════════════════════════════════════════════════════════ */
+function SetupScreen() {
+  return (
+    <div className="auth-bg">
+      <div className="auth-card">
+        <div className="logo">
+          <span className="logo-icon">✈</span>
+          <h1>ArrowsMail</h1>
+          <p>One-time Firebase setup required</p>
+        </div>
+        <div className="setup-steps">
+          <ol>
+            <li>Go to <span className="setup-highlight">console.firebase.google.com</span></li>
+            <li>Create a project → Add Web App → copy the config</li>
+            <li>Build → Realtime Database → Create database in <em>Test Mode</em></li>
+            <li>Open <strong>ArrowsMail.html</strong> and paste values into <span className="setup-code">FIREBASE_CONFIG</span></li>
+          </ol>
+          <p style={{ marginTop:16, color:'#3a3a5a', fontSize:13 }}>
+            After setup, anyone in the world can open this file and chat in real-time.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTH SCREEN
+═══════════════════════════════════════════════════════════════ */
+function AuthScreen({ onLogin }) {
+  const [tab,  setTab]  = useState('login');
+  const [user, setUser] = useState('');
+  const [pass, setPass] = useState('');
+  const [name, setName] = useState('');
+  const [err,  setErr]  = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async e => {
+    e.preventDefault(); setErr(''); setBusy(true);
+    try {
+      if (tab === 'signup') {
+        if (user.length < 3)                    return setErr('Username must be at least 3 characters');
+        if (user.length > 20)                   return setErr('Username must be 20 characters or fewer');
+        if (!/^[a-zA-Z0-9_ ]+$/.test(user))    return setErr('Letters, numbers, spaces, and underscores only');
+        if (pass.length < 6)                    return setErr('Password must be at least 6 characters');
+
+        const [bannedSnap, existsSnap] = await Promise.all([
+          FB.ref('banned/' + user).once('value'),
+          FB.ref('users/' + user).once('value'),
+        ]);
+        if (bannedSnap.val())    return setErr('This username is banned');
+        if (existsSnap.exists()) return setErr('Username already taken');
+
+        const hashed = await hashPw(pass);
+        await FB.ref('users/' + user).set({
+          username: user,
+          display:  name.trim() || user,
+          password: hashed,
+          color:    AV_COLORS[Math.floor(Math.random() * AV_COLORS.length)],
+          joined:   Date.now(),
+        });
+        localStorage.setItem('am_sess', user);
+        onLogin(user);
+      } else {
+        const snap = await FB.ref('users/' + user).once('value');
+        const u = snap.val();
+        if (!u) return setErr('Invalid username or password');
+
+        const bannedSnap = await FB.ref('banned/' + user).once('value');
+        if (bannedSnap.val()) return setErr('You have been banned from ArrowsMail');
+
+        const hashed = await hashPw(pass);
+        if (u.password !== hashed) return setErr('Invalid username or password');
+
+        localStorage.setItem('am_sess', user);
+        onLogin(user);
+      }
+    } catch(e) {
+      console.error(e);
+      setErr('Connection error — check your Firebase config.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="auth-bg">
+      <div className="auth-card">
+        <div className="logo">
+          <span className="logo-icon">✈</span>
+          <h1>ArrowsMail</h1>
+          <p>Connect with anyone, anywhere</p>
+        </div>
+
+        <div className="tabs">
+          {[['login','Sign In'],['signup','Create Account']].map(([t,label]) => (
+            <div key={t} className={`tab${tab===t?' on':''}`}
+                 onClick={() => { setTab(t); setErr(''); }}>
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {err && <div className="auth-err">⚠ {err}</div>}
+
+        <form onSubmit={submit}>
+          {tab === 'signup' && (
+            <input className="inp" placeholder="Display name (optional)"
+                   value={name} onChange={e => setName(e.target.value)} />
+          )}
+          <input className="inp" placeholder="Username" autoFocus required
+                 value={user} onChange={e => setUser(e.target.value)} />
+          <input className="inp" type="password" placeholder="Password" required
+                 value={pass} onChange={e => setPass(e.target.value)} />
+          <button className="btn-p" type="submit" disabled={busy}>
+            {busy ? 'Please wait…' : tab === 'login' ? 'Sign In →' : 'Create Account →'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CREATE CHANNEL MODAL
+═══════════════════════════════════════════════════════════════ */
+function CreateModal({ onClose, onCreate, allUsers, me }) {
+  const [type,    setType]    = useState('public');
+  const [chName,  setChName]  = useState('');
+  const [mInp,    setMInp]    = useState('');
+  const [members, setMembers] = useState([]);
+  const [err,     setErr]     = useState('');
+
+  const addMember = e => {
+    if (e.key !== 'Enter' && e.key !== ',') return;
+    e.preventDefault();
+    const u = mInp.trim();
+    if (!u) return;
+    if (u === me)            return setErr("That's you — you're already in the group");
+    if (!allUsers[u])        return setErr(`User "${u}" not found`);
+    if (members.includes(u)) return setErr(`${u} already added`);
+    setMembers(p => [...p, u]); setMInp(''); setErr('');
+  };
+
+  const create = () => {
+    if (!chName.trim())                       return setErr('Please enter a channel name');
+    if (type === 'group' && !members.length)  return setErr('Add at least one member for a group chat');
+    onCreate(chName.trim(), type, members);
+  };
+
+  return (
+    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <h3>✨ New Channel</h3>
+
+        <label>Type</label>
+        <div className="type-row">
+          {[['public','#','Public Channel'],['group','👥','Group Chat']].map(([t,icon,label]) => (
+            <div key={t} className={`type-card${type===t?' on':''}`} onClick={() => setType(t)}>
+              <span className="ti">{icon}</span>
+              <span className="tn">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        <label>Name</label>
+        <input className="inp" autoFocus
+               placeholder={type === 'group' ? 'my-group' : 'channel-name'}
+               value={chName}
+               onChange={e => setChName(e.target.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''))} />
+
+        {type === 'group' && <>
+          <label>Add Members — type username + Enter</label>
+          <div className="tags-wrap"
+               onClick={e => e.currentTarget.querySelector('.tag-inp').focus()}>
+            {members.map(m => (
+              <div key={m} className="tag">
+                {m}
+                <button onClick={() => setMembers(p => p.filter(x => x !== m))}>×</button>
+              </div>
+            ))}
+            <input className="tag-inp" placeholder="Type a username…"
+                   value={mInp} onChange={e => setMInp(e.target.value)} onKeyDown={addMember} />
+          </div>
+        </>}
+
+        {err && <div className="modal-err">⚠ {err}</div>}
+
+        <div className="modal-foot">
+          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-go" onClick={create}>Create</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════════════════ */
+function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout }) {
+  const pub = channels.filter(c => c.type === 'public');
+  const grp = channels.filter(c => c.type === 'group');
+  const user    = userData[me] || {};
+  const color   = user.color   || avColor(me);
+  const display = user.display || me;
+
+  return (
+    <div className="sidebar">
+      <div className="sb-head">
+        <span className="brand">✈ ArrowsMail</span>
+        <button className="sb-add" onClick={onNew} title="New channel">+</button>
+      </div>
+
+      <div className="sb-scroll">
+        <div className="sb-label">Channels</div>
+        {pub.map(c => (
+          <div key={c.id} className={`ch-row${activeId===c.id?' act':''}`}
+               onClick={() => onSelect(c.id)}>
+            <span className="ch-sym">#</span>
+            <span className="ch-nm">{c.name}</span>
+          </div>
+        ))}
+
+        {grp.length > 0 && <>
+          <div className="sb-label" style={{ marginTop: 14 }}>Group Chats</div>
+          {grp.map(c => (
+            <div key={c.id} className={`ch-row${activeId===c.id?' act':''}`}
+                 onClick={() => onSelect(c.id)}>
+              <span className="ch-sym" style={{ fontSize: 13 }}>👥</span>
+              <span className="ch-nm">{c.name}</span>
+            </div>
+          ))}
+        </>}
+      </div>
+
+      <div className="user-bar">
+        <div className="av" style={{ background: color }}>
+          {display[0].toUpperCase()}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="u-name">
+            {display}
+            {me === OWNER && <span className="owner-badge" title="Server Owner">👑</span>}
+          </div>
+          <div className="u-tag">@{me} · <span style={{ color: '#43b581' }}>● Online</span></div>
+        </div>
+        <button className="logout" onClick={onLogout} title="Sign out">↪</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHAT AREA
+═══════════════════════════════════════════════════════════════ */
+function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBan }) {
+  const [inp, setInp] = useState('');
+  const [ctx, setCtx] = useState(null);
+  const bottomRef = useRef(null);
+  const taRef     = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    if (!ctx) return;
+    const close = () => setCtx(null);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [ctx]);
+
+  const send = useCallback(() => {
+    const t = inp.trim(); if (!t) return;
+    onSend(t); setInp('');
+    if (taRef.current) {
+      taRef.current.style.height = '22px';
+      taRef.current.focus();
+    }
+  }, [inp, onSend]);
+
+  const onKey = e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  const openCtx = (e, author) => {
+    if (me !== OWNER || author === OWNER || author === '__system__') return;
+    e.preventDefault();
+    setCtx({ x: e.clientX, y: e.clientY, author });
+  };
+
+  const rows = useMemo(() => insertDividers(groupMessages(messages)), [messages]);
+  const isMuted = muted.includes(me);
+
+  return (
+    <div className="chat">
+      <div className="chat-head">
+        <span className="h-sym">{channel.type === 'group' ? '👥' : '#'}</span>
+        <span className="h-nm">{channel.name}</span>
+        {channel.type === 'group' && (
+          <span className="h-meta">{channel.members.length} members</span>
+        )}
+      </div>
+
+      <div className="msgs">
+        <div className="welcome-box">
+          <span className="w-icon">{channel.type === 'group' ? '👥' : '#'}</span>
+          <h2>Welcome to #{channel.name}</h2>
+          <p>
+            {channel.type === 'group'
+              ? 'This is the start of your group chat.'
+              : `This is the beginning of the #${channel.name} channel.`}
+          </p>
+        </div>
+
+        {rows.map((item, i) => {
+          if (item.divider) return (
+            <div key={'d' + i} className="divider">
+              <hr /><span>{item.label}</span><hr />
+            </div>
+          );
+          if (item.sys) return (
+            <div key={item.msg.id} className="sys-line">{item.msg.content}</div>
+          );
+
+          const u = userData[item.author] || {};
+          const color      = u.color   || avColor(item.author);
+          const display    = u.display || item.author;
+          const isOwner    = item.author === OWNER;
+          const isMutedUser = muted.includes(item.author);
+
+          return (
+            <React.Fragment key={item.msgs[0].id}>
+              <div className="msg-grp" onContextMenu={e => openCtx(e, item.author)}>
+                <div className="msg-av" style={{ background: color }}>
+                  {display[0].toUpperCase()}
+                </div>
+                <div className="msg-body">
+                  <div className="msg-hdr">
+                    <span className="msg-author" style={{ color }}>{display}</span>
+                    {isOwner && <span className="owner-badge" title="Server Owner">👑</span>}
+                    {isMutedUser && me === OWNER && <span className="muted-badge">MUTED</span>}
+                    <span className="msg-ts">{fmtTimestamp(item.msgs[0].ts)}</span>
+                  </div>
+                  <div className="msg-text">{item.msgs[0].content}</div>
+                </div>
+              </div>
+              {item.msgs.slice(1).map(m => (
+                <div key={m.id} className="msg-cont" onContextMenu={e => openCtx(e, item.author)}>
+                  <div className="msg-pad" />
+                  <div className="msg-text-only">{m.content}</div>
+                </div>
+              ))}
+            </React.Fragment>
+          );
+        })}
+
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="input-area">
+        {isMuted
+          ? <div className="muted-bar">🔇 You have been muted by the server owner</div>
+          : <div className="input-wrap">
+              <textarea
+                ref={taRef}
+                className="msg-inp"
+                placeholder={`Message #${channel.name}  (Shift+Enter for new line)`}
+                value={inp}
+                rows={1}
+                style={{ height: '22px' }}
+                onChange={e => {
+                  setInp(e.target.value);
+                  e.target.style.height = '22px';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                }}
+                onKeyDown={onKey}
+              />
+              <button className="send-btn" onClick={send} disabled={!inp.trim()}>↑</button>
+            </div>
+        }
+      </div>
+
+      {ctx && (
+        <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}
+             onClick={e => e.stopPropagation()}>
+          <div style={{ padding:'4px 14px 8px', fontSize:12, color:'#555',
+                        borderBottom:'1px solid rgba(255,255,255,.06)', marginBottom:4 }}>
+            @{ctx.author}
+          </div>
+          <div className="ctx-item warn" onClick={() => { onMute(ctx.author); setCtx(null); }}>
+            {muted.includes(ctx.author) ? '🔊 Unmute' : '🔇 Mute'}
+          </div>
+          <div className="ctx-item danger" onClick={() => { onBan(ctx.author); setCtx(null); }}>
+            🔨 Ban
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════════════════════ */
+function MainApp({ me, onLogout }) {
+  const [chs,       setChs]       = useState([]);
+  const [activeCh,  setActiveCh]  = useState('general');
+  const [msgs,      setMsgs]      = useState({});
+  const [users,     setUsers]     = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [muted,     setMuted]     = useState([]);
+
+  // Initialize default channels, then listen
+  useEffect(() => {
+    let chRef;
+    async function init() {
+      const snap = await FB.ref('channels').once('value');
+      if (!snap.exists()) {
+        const t = Date.now();
+        await FB.ref('channels').set({
+          general:       { id:'general',       name:'general',       type:'public', members:{}, created_by:'system', created:t },
+          announcements: { id:'announcements', name:'announcements', type:'public', members:{}, created_by:'system', created:t },
+          random:        { id:'random',        name:'random',        type:'public', members:{}, created_by:'system', created:t },
+          gaming:        { id:'gaming',        name:'gaming',        type:'public', members:{}, created_by:'system', created:t },
+        });
+        await FB.ref('messages/general').push({
+          author: '__system__',
+          content: '👋 Welcome to ArrowsMail! Anyone can sign up and chat in real-time from any device.',
+          ts: t, sys: true,
+        });
+      }
+      chRef = FB.ref('channels');
+      chRef.on('value', snap => {
+        const data = snap.val() || {};
+        const list = Object.values(data)
+          .map(c => ({ ...c, members: Object.keys(c.members || {}) }))
+          .sort((a, b) => a.created - b.created);
+        setChs(list);
+      });
+    }
+    init();
+    return () => { if (chRef) chRef.off('value'); };
+  }, []);
+
+  // Listen to messages for active channel
+  useEffect(() => {
+    const ref = FB.ref('messages/' + activeCh);
+    ref.on('value', snap => {
+      const data = snap.val() || {};
+      const list = Object.entries(data)
+        .map(([k, v]) => ({ id: k, ...v }))
+        .sort((a, b) => a.ts - b.ts);
+      setMsgs(p => ({ ...p, [activeCh]: list }));
+    });
+    return () => ref.off('value');
+  }, [activeCh]);
+
+  // Listen to users
+  useEffect(() => {
+    const ref = FB.ref('users');
+    ref.on('value', snap => setUsers(snap.val() || {}));
+    return () => ref.off('value');
+  }, []);
+
+  // Listen to muted
+  useEffect(() => {
+    const ref = FB.ref('muted');
+    ref.on('value', snap => {
+      const data = snap.val() || {};
+      setMuted(Object.keys(data).filter(k => data[k]));
+    });
+    return () => ref.off('value');
+  }, []);
+
+  const sendMsg = useCallback(content => {
+    FB.ref('messages/' + activeCh).push({
+      author: me, content, ts: Date.now(),
+    });
+  }, [me, activeCh]);
+
+  const createChannel = useCallback((name, type, members) => {
+    const id = 'ch_' + genId();
+    const membersObj = {};
+    if (type === 'group') [me, ...members].forEach(u => membersObj[u] = true);
+    FB.ref('channels/' + id).set({
+      id, name, type, members: membersObj, created_by: me, created: Date.now(),
+    });
+    FB.ref('messages/' + id).push({
+      author: '__system__', content: `${me} created this channel`, ts: Date.now(), sys: true,
+    });
+    setActiveCh(id);
+    setShowModal(false);
+  }, [me]);
+
+  const muteUser = useCallback(username => {
+    if (muted.includes(username)) {
+      FB.ref('muted/' + username).remove();
+    } else {
+      FB.ref('muted/' + username).set(true);
+    }
+  }, [muted]);
+
+  const banUser = useCallback(username => {
+    if (!window.confirm(`Ban "${username}"? They will be logged out immediately.`)) return;
+    FB.ref('banned/' + username).set(true);
+    FB.ref('muted/' + username).remove();
+    FB.ref('messages/' + activeCh).push({
+      author: '__system__', content: `${username} was banned by the owner.`, ts: Date.now(), sys: true,
+    });
+  }, [activeCh]);
+
+  const visible = useMemo(() =>
+    chs.filter(c => c.type === 'public' || (c.type === 'group' && c.members.includes(me))),
+    [chs, me]
+  );
+
+  const channel = visible.find(c => c.id === activeCh) || null;
+
+  return (
+    <div className="layout">
+      <Sidebar
+        channels={visible}
+        activeId={activeCh}
+        onSelect={setActiveCh}
+        onNew={() => setShowModal(true)}
+        me={me}
+        userData={users}
+        onLogout={onLogout}
+      />
+
+      {channel
+        ? <ChatArea channel={channel} messages={msgs[activeCh] || []} onSend={sendMsg}
+                    me={me} userData={users} muted={muted} onMute={muteUser} onBan={banUser} />
+        : <div className="no-ch"><span>✈</span><p>Select a channel to start chatting</p></div>
+      }
+
+      {showModal && (
+        <CreateModal
+          onClose={() => setShowModal(false)}
+          onCreate={createChannel}
+          allUsers={users}
+          me={me}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ROOT
+═══════════════════════════════════════════════════════════════ */
+function App() {
+  const [me,      setMe]      = useState(null);
+  const [loading, setLoading] = useState(!SETUP_NEEDED);
+
+  // Restore session
+  useEffect(() => {
+    if (SETUP_NEEDED) return;
+    const s = localStorage.getItem('am_sess');
+    if (!s) { setLoading(false); return; }
+    FB.ref('users/' + s).once('value')
+      .then(snap => { if (snap.exists()) setMe(s); else localStorage.removeItem('am_sess'); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Auto-kick if banned
+  useEffect(() => {
+    if (!me) return;
+    const ref = FB.ref('banned/' + me);
+    ref.on('value', snap => {
+      if (snap.val()) { localStorage.removeItem('am_sess'); setMe(null); }
+    });
+    return () => ref.off('value');
+  }, [me]);
+
+  const login  = useCallback(u => setMe(u), []);
+  const logout = useCallback(() => { localStorage.removeItem('am_sess'); setMe(null); }, []);
+
+  if (SETUP_NEEDED) return <SetupScreen />;
+  if (loading) return (
+    <div className="auth-bg">
+      <div style={{ color:'#3a3a5a', fontSize:15, letterSpacing:.5 }}>Connecting…</div>
+    </div>
+  );
+  if (!me) return <AuthScreen onLogin={login} />;
+  return <MainApp me={me} onLogout={logout} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
