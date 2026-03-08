@@ -220,7 +220,7 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 /* ═══════════════════════════════════════════════════════════════
    CONSTANTS & HELPERS
 ═══════════════════════════════════════════════════════════════ */
-const OWNER = 'Da Korok';
+const OWNER = 'DaKorok';
 
 const AV_COLORS = [
   '#5b8dee','#a855f7','#43b581','#e17055',
@@ -277,7 +277,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "18899897828",
   appId:             "1:18899897828:web:bd6044fe5dfe61a0b90bf1",
 };
-const SETUP_NEEDED = FIREBASE_CONFIG.apiKey === "YOUR_API_KEY";
+const SETUP_NEEDED = FIREBASE_CONFIG.apiKey === "AIzaSyBx4BtqntyZuL2BLE-8OGVRf8rEqG-C9jM";
 let FB;
 if (!SETUP_NEEDED) {
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
@@ -912,4 +912,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
-
