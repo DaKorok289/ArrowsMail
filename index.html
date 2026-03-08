@@ -90,7 +90,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .chat{flex:1;display:flex;flex-direction:column;background:#111119;min-width:0;}
 .chat-head{height:54px;padding:0 22px;display:flex;align-items:center;gap:12px;
   border-bottom:1px solid rgba(255,255,255,.04);box-shadow:0 2px 8px rgba(0,0,0,.4);
-  flex-shrink:0;background:#111119;}
+  flex-shrink:0;background:#111119;position:relative;}
 .chat-head .h-sym{font-size:19px;color:#3a3a60;}
 .chat-head .h-nm{font-size:16px;font-weight:700;color:#e0e4ff;}
 .chat-head .h-meta{font-size:12px;color:#3a3a60;margin-left:auto;}
@@ -162,7 +162,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .type-card.on .tn{color:#7aa3f1;}
 .tags-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;
   background:#080814;border:1.5px solid rgba(255,255,255,.07);border-radius:9px;
-  padding:7px 10px;margin-bottom:16px;min-height:42px;cursor:text;}
+  padding:7px 10px;margin-bottom:8px;min-height:42px;cursor:text;}
 .tag{background:rgba(91,141,238,.15);border:1px solid rgba(91,141,238,.3);
   border-radius:5px;padding:2px 8px;font-size:12.5px;color:#7aa3f1;
   display:flex;align-items:center;gap:5px;}
@@ -183,15 +183,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .modal-err{font-size:12.5px;color:#ff7070;margin-bottom:12px;
   background:rgba(255,80,80,.08);border-radius:6px;padding:8px 12px;}
 
-/* ── Owner / Moderation ── */
-.owner-badge{font-size:13px;margin-left:5px;vertical-align:middle;
-  filter:drop-shadow(0 0 6px gold);}
+/* ── Badges ── */
+.owner-badge{font-size:10px;font-weight:800;padding:1px 7px;border-radius:4px;
+  background:rgba(255,60,60,.15);color:#ff4444;border:1px solid rgba(255,60,60,.3);
+  margin-left:6px;vertical-align:middle;letter-spacing:.6px;text-transform:uppercase;}
+.admin-badge{font-size:10px;font-weight:800;padding:1px 7px;border-radius:4px;
+  background:rgba(91,141,238,.15);color:#5b8dee;border:1px solid rgba(91,141,238,.3);
+  margin-left:6px;vertical-align:middle;letter-spacing:.6px;text-transform:uppercase;}
 .muted-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;
   background:rgba(255,80,80,.15);color:#ff7070;border:1px solid rgba(255,80,80,.25);
   margin-left:6px;vertical-align:middle;letter-spacing:.5px;}
 .muted-bar{display:flex;align-items:center;justify-content:center;gap:8px;
   background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);
   border-radius:9px;padding:12px 16px;color:#ff7070;font-size:14px;}
+
+/* ── Context menu ── */
 .ctx-menu{position:fixed;background:#1e1e2e;border:1px solid rgba(255,255,255,.1);
   border-radius:9px;padding:6px;z-index:300;min-width:160px;
   box-shadow:0 8px 32px rgba(0,0,0,.7);}
@@ -202,6 +208,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ctx-item.danger:hover{background:rgba(255,80,80,.12);}
 .ctx-item.warn{color:#fdcb6e;}
 .ctx-item.warn:hover{background:rgba(253,203,110,.1);}
+
+/* ── User suggestions ── */
+.user-sug-item{display:flex;align-items:center;gap:10px;padding:8px 12px;
+  border-radius:7px;cursor:pointer;transition:background .12s;}
+.user-sug-item:hover{background:rgba(255,255,255,.06);}
+.sug-list{background:#0d0d1a;border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;margin-top:4px;overflow:hidden;max-height:200px;overflow-y:auto;}
+
+/* ── Add-member panel ── */
+.add-member-panel{position:absolute;top:54px;right:0;width:290px;
+  background:#1a1a2a;border:1px solid rgba(255,255,255,.08);border-radius:0 0 12px 12px;
+  padding:14px;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,.6);}
+.add-member-panel h4{font-size:11px;font-weight:700;color:#555;margin-bottom:10px;
+  text-transform:uppercase;letter-spacing:.8px;}
+.add-member-inp{display:block;width:100%;padding:9px 12px;background:#0d0d1a;
+  border:1.5px solid rgba(255,255,255,.08);border-radius:8px;color:#eee;
+  font-size:14px;outline:none;font-family:inherit;}
+.add-member-inp:focus{border-color:#5b8dee;}
+.panel-sug{margin-top:6px;max-height:200px;overflow-y:auto;}
 
 /* ── Setup screen ── */
 .setup-steps{color:#555;font-size:14px;line-height:1.9;margin-top:8px;}
@@ -262,11 +287,6 @@ async function hashPw(pw) {
 
 /* ═══════════════════════════════════════════════════════════════
    FIREBASE CONFIG
-   ───────────────────────────────────────────────────────────────
-   1. Go to https://console.firebase.google.com
-   2. Create a project → Add Web App → copy the config object
-   3. Build → Realtime Database → Create database (choose Test Mode)
-   4. Paste your values into FIREBASE_CONFIG below, save & reopen
 ═══════════════════════════════════════════════════════════════ */
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyBx4BtqntyZuL2BLE-8OGVRf8rEqG-C9jM",
@@ -277,7 +297,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "18899897828",
   appId:             "1:18899897828:web:bd6044fe5dfe61a0b90bf1",
 };
-const SETUP_NEEDED = FIREBASE_CONFIG.apiKey === "AIzaSyBx4BtqntyZuL2BLE-8OGVRf8rEqG-C9jM";
+const SETUP_NEEDED = FIREBASE_CONFIG.apiKey === "YOUR_API_KEY";
 let FB;
 if (!SETUP_NEEDED) {
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
@@ -450,20 +470,31 @@ function CreateModal({ onClose, onCreate, allUsers, me }) {
   const [members, setMembers] = useState([]);
   const [err,     setErr]     = useState('');
 
-  const addMember = e => {
+  const suggestions = mInp.trim().length > 0
+    ? Object.keys(allUsers).filter(k =>
+        (k.toLowerCase().includes(mInp.trim().toLowerCase()) ||
+         (allUsers[k].display||'').toLowerCase().includes(mInp.trim().toLowerCase())) &&
+        k !== me && !members.includes(k))
+    : [];
+
+  const addMember = username => {
+    if (username === me)             return setErr("That's you — you're already in the group");
+    if (members.includes(username))  return setErr(`${username} already added`);
+    setMembers(p => [...p, username]); setMInp(''); setErr('');
+  };
+
+  const onMInpKey = e => {
     if (e.key !== 'Enter' && e.key !== ',') return;
     e.preventDefault();
-    const u = mInp.trim();
-    if (!u) return;
-    if (u === me)            return setErr("That's you — you're already in the group");
-    if (!allUsers[u])        return setErr(`User "${u}" not found`);
-    if (members.includes(u)) return setErr(`${u} already added`);
-    setMembers(p => [...p, u]); setMInp(''); setErr('');
+    if (suggestions.length > 0) { addMember(suggestions[0]); return; }
+    const match = Object.keys(allUsers).find(k => k.toLowerCase() === mInp.trim().toLowerCase());
+    if (!match) return setErr(`User "${mInp.trim()}" not found`);
+    addMember(match);
   };
 
   const create = () => {
-    if (!chName.trim())                       return setErr('Please enter a channel name');
-    if (type === 'group' && !members.length)  return setErr('Add at least one member for a group chat');
+    if (!chName.trim())                      return setErr('Please enter a channel name');
+    if (type === 'group' && !members.length) return setErr('Add at least one member for a group chat');
     onCreate(chName.trim(), type, members);
   };
 
@@ -489,18 +520,36 @@ function CreateModal({ onClose, onCreate, allUsers, me }) {
                onChange={e => setChName(e.target.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''))} />
 
         {type === 'group' && <>
-          <label>Add Members — type username + Enter</label>
+          <label>Add Members</label>
           <div className="tags-wrap"
                onClick={e => e.currentTarget.querySelector('.tag-inp').focus()}>
             {members.map(m => (
               <div key={m} className="tag">
-                {m}
+                {(allUsers[m] && allUsers[m].display) || m}
                 <button onClick={() => setMembers(p => p.filter(x => x !== m))}>×</button>
               </div>
             ))}
-            <input className="tag-inp" placeholder="Type a username…"
-                   value={mInp} onChange={e => setMInp(e.target.value)} onKeyDown={addMember} />
+            <input className="tag-inp" placeholder="Search users…"
+                   value={mInp} onChange={e => setMInp(e.target.value)} onKeyDown={onMInpKey} />
           </div>
+          {suggestions.length > 0 && (
+            <div className="sug-list">
+              {suggestions.slice(0, 5).map(u => {
+                const disp = (allUsers[u] && allUsers[u].display) || u;
+                return (
+                  <div key={u} className="user-sug-item" onClick={() => addMember(u)}>
+                    <div style={{ width:26,height:26,borderRadius:'50%',background:avColor(u),
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      fontSize:12,fontWeight:800,flexShrink:0 }}>
+                      {disp[0].toUpperCase()}
+                    </div>
+                    <span style={{ fontSize:14,color:'#ccc' }}>{disp}</span>
+                    {disp !== u && <span style={{ color:'#3a3a5a',fontSize:12 }}>@{u}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>}
 
         {err && <div className="modal-err">⚠ {err}</div>}
@@ -560,7 +609,7 @@ function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout }
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="u-name">
             {display}
-            {me === OWNER && <span className="owner-badge" title="Server Owner">👑</span>}
+            {me === OWNER && <span className="owner-badge">Owner</span>}
           </div>
           <div className="u-tag">@{me} · <span style={{ color: '#43b581' }}>● Online</span></div>
         </div>
@@ -573,22 +622,41 @@ function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout }
 /* ═══════════════════════════════════════════════════════════════
    CHAT AREA
 ═══════════════════════════════════════════════════════════════ */
-function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBan }) {
-  const [inp, setInp] = useState('');
-  const [ctx, setCtx] = useState(null);
-  const bottomRef = useRef(null);
-  const taRef     = useRef(null);
+function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMute, onBan, onPromote, onAddMember, allUsers }) {
+  const [inp,           setInp]           = useState('');
+  const [ctx,           setCtx]           = useState(null);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addInp,        setAddInp]        = useState('');
+  const bottomRef        = useRef(null);
+  const taRef            = useRef(null);
+  const menuRef          = useRef(null);
+  const addMemberPanelRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Close context menu on outside click
   useEffect(() => {
     if (!ctx) return;
-    const close = () => setCtx(null);
-    window.addEventListener('click', close);
-    return () => window.removeEventListener('click', close);
+    const close = e => {
+      if (menuRef.current && menuRef.current.contains(e.target)) return;
+      setCtx(null);
+    };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
   }, [ctx]);
+
+  // Close add-member panel on outside click
+  useEffect(() => {
+    if (!showAddMember) return;
+    const close = e => {
+      if (addMemberPanelRef.current && addMemberPanelRef.current.contains(e.target)) return;
+      setShowAddMember(false);
+    };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [showAddMember]);
 
   const send = useCallback(() => {
     const t = inp.trim(); if (!t) return;
@@ -603,11 +671,20 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBa
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
+  const canModerate = me === OWNER || admins.includes(me);
   const openCtx = (e, author) => {
-    if (me !== OWNER || author === OWNER || author === '__system__') return;
+    if (!canModerate || author === OWNER || author === '__system__') return;
+    if (me !== OWNER && admins.includes(author)) return;
     e.preventDefault();
     setCtx({ x: e.clientX, y: e.clientY, author });
   };
+
+  const addSuggestions = addInp.trim()
+    ? Object.keys(allUsers || {}).filter(k =>
+        (k.toLowerCase().includes(addInp.toLowerCase()) ||
+         ((allUsers[k].display||'').toLowerCase().includes(addInp.toLowerCase()))) &&
+        !channel.members.includes(k))
+    : [];
 
   const rows = useMemo(() => insertDividers(groupMessages(messages)), [messages]);
   const isMuted = muted.includes(me);
@@ -618,7 +695,39 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBa
         <span className="h-sym">{channel.type === 'group' ? '👥' : '#'}</span>
         <span className="h-nm">{channel.name}</span>
         {channel.type === 'group' && (
-          <span className="h-meta">{channel.members.length} members</span>
+          <>
+            <span className="h-meta">{channel.members.length} members</span>
+            <button className="sb-add" style={{ marginLeft:8,flexShrink:0 }}
+                    onClick={() => setShowAddMember(p => !p)} title="Add member">+</button>
+          </>
+        )}
+
+        {showAddMember && (
+          <div className="add-member-panel" ref={addMemberPanelRef}>
+            <h4>Add to Group</h4>
+            <input className="add-member-inp" placeholder="Search users…"
+                   value={addInp} onChange={e => setAddInp(e.target.value)} autoFocus />
+            <div className="panel-sug">
+              {addInp.trim() && addSuggestions.length === 0 && (
+                <div style={{ padding:'10px 12px', color:'#444', fontSize:13 }}>No users found</div>
+              )}
+              {addSuggestions.slice(0, 6).map(u => {
+                const disp = (allUsers[u] && allUsers[u].display) || u;
+                return (
+                  <div key={u} className="user-sug-item"
+                       onClick={() => { onAddMember(channel.id, u); setAddInp(''); setShowAddMember(false); }}>
+                    <div style={{ width:28,height:28,borderRadius:'50%',background:avColor(u),
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      fontSize:13,fontWeight:800,flexShrink:0 }}>
+                      {disp[0].toUpperCase()}
+                    </div>
+                    <span style={{ fontSize:14,color:'#ccc' }}>{disp}</span>
+                    {disp !== u && <span style={{ color:'#3a3a5a',fontSize:12 }}>@{u}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
 
@@ -644,9 +753,10 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBa
           );
 
           const u = userData[item.author] || {};
-          const color      = u.color   || avColor(item.author);
-          const display    = u.display || item.author;
-          const isOwner    = item.author === OWNER;
+          const color       = u.color   || avColor(item.author);
+          const display     = u.display || item.author;
+          const isOwner     = item.author === OWNER;
+          const isAdmin     = admins.includes(item.author);
           const isMutedUser = muted.includes(item.author);
 
           return (
@@ -658,8 +768,9 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBa
                 <div className="msg-body">
                   <div className="msg-hdr">
                     <span className="msg-author" style={{ color }}>{display}</span>
-                    {isOwner && <span className="owner-badge" title="Server Owner">👑</span>}
-                    {isMutedUser && me === OWNER && <span className="muted-badge">MUTED</span>}
+                    {isOwner && <span className="owner-badge">Owner</span>}
+                    {!isOwner && isAdmin && <span className="admin-badge">Admin</span>}
+                    {isMutedUser && canModerate && <span className="muted-badge">MUTED</span>}
                     <span className="msg-ts">{fmtTimestamp(item.msgs[0].ts)}</span>
                   </div>
                   <div className="msg-text">{item.msgs[0].content}</div>
@@ -680,7 +791,7 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBa
 
       <div className="input-area">
         {isMuted
-          ? <div className="muted-bar">🔇 You have been muted by the server owner</div>
+          ? <div className="muted-bar">🔇 You have been muted</div>
           : <div className="input-wrap">
               <textarea
                 ref={taRef}
@@ -702,8 +813,7 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBa
       </div>
 
       {ctx && (
-        <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}
-             onClick={e => e.stopPropagation()}>
+        <div className="ctx-menu" ref={menuRef} style={{ left: ctx.x, top: ctx.y }}>
           <div style={{ padding:'4px 14px 8px', fontSize:12, color:'#555',
                         borderBottom:'1px solid rgba(255,255,255,.06)', marginBottom:4 }}>
             @{ctx.author}
@@ -711,6 +821,12 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, onMute, onBa
           <div className="ctx-item warn" onClick={() => { onMute(ctx.author); setCtx(null); }}>
             {muted.includes(ctx.author) ? '🔊 Unmute' : '🔇 Mute'}
           </div>
+          {me === OWNER && (
+            <div className="ctx-item" style={{ color:'#5b8dee' }}
+                 onClick={() => { onPromote(ctx.author); setCtx(null); }}>
+              {admins.includes(ctx.author) ? '⬇ Remove Admin' : '⬆ Make Admin'}
+            </div>
+          )}
           <div className="ctx-item danger" onClick={() => { onBan(ctx.author); setCtx(null); }}>
             🔨 Ban
           </div>
@@ -730,6 +846,7 @@ function MainApp({ me, onLogout }) {
   const [users,     setUsers]     = useState({});
   const [showModal, setShowModal] = useState(false);
   const [muted,     setMuted]     = useState([]);
+  const [admins,    setAdmins]    = useState([]);
 
   // Initialize default channels, then listen
   useEffect(() => {
@@ -793,6 +910,16 @@ function MainApp({ me, onLogout }) {
     return () => ref.off('value');
   }, []);
 
+  // Listen to admins
+  useEffect(() => {
+    const ref = FB.ref('admins');
+    ref.on('value', snap => {
+      const data = snap.val() || {};
+      setAdmins(Object.keys(data).filter(k => data[k]));
+    });
+    return () => ref.off('value');
+  }, []);
+
   const sendMsg = useCallback(content => {
     FB.ref('messages/' + activeCh).push({
       author: me, content, ts: Date.now(),
@@ -801,16 +928,25 @@ function MainApp({ me, onLogout }) {
 
   const createChannel = useCallback((name, type, members) => {
     const id = 'ch_' + genId();
+    const membersArr = type === 'group' ? [me, ...members] : [];
     const membersObj = {};
-    if (type === 'group') [me, ...members].forEach(u => membersObj[u] = true);
-    FB.ref('channels/' + id).set({
-      id, name, type, members: membersObj, created_by: me, created: Date.now(),
-    });
+    membersArr.forEach(u => membersObj[u] = true);
+    const now = Date.now();
+    const ch = { id, name, type, members: membersObj, created_by: me, created: now };
+    FB.ref('channels/' + id).set(ch);
     FB.ref('messages/' + id).push({
-      author: '__system__', content: `${me} created this channel`, ts: Date.now(), sys: true,
+      author: '__system__', content: `${me} created this channel`, ts: now, sys: true,
     });
+    setChs(prev => [...prev, { ...ch, members: membersArr }]);
     setActiveCh(id);
     setShowModal(false);
+  }, [me]);
+
+  const addMemberToGroup = useCallback((channelId, username) => {
+    FB.ref('channels/' + channelId + '/members/' + username).set(true);
+    FB.ref('messages/' + channelId).push({
+      author: '__system__', content: `${me} added ${username}`, ts: Date.now(), sys: true,
+    });
   }, [me]);
 
   const muteUser = useCallback(username => {
@@ -829,6 +965,14 @@ function MainApp({ me, onLogout }) {
       author: '__system__', content: `${username} was banned by the owner.`, ts: Date.now(), sys: true,
     });
   }, [activeCh]);
+
+  const promoteAdmin = useCallback(username => {
+    if (admins.includes(username)) {
+      FB.ref('admins/' + username).remove();
+    } else {
+      FB.ref('admins/' + username).set(true);
+    }
+  }, [admins]);
 
   const visible = useMemo(() =>
     chs.filter(c => c.type === 'public' || (c.type === 'group' && c.members.includes(me))),
@@ -851,7 +995,9 @@ function MainApp({ me, onLogout }) {
 
       {channel
         ? <ChatArea channel={channel} messages={msgs[activeCh] || []} onSend={sendMsg}
-                    me={me} userData={users} muted={muted} onMute={muteUser} onBan={banUser} />
+                    me={me} userData={users} muted={muted} admins={admins}
+                    onMute={muteUser} onBan={banUser} onPromote={promoteAdmin}
+                    onAddMember={addMemberToGroup} allUsers={users} />
         : <div className="no-ch"><span>✈</span><p>Select a channel to start chatting</p></div>
       }
 
@@ -874,7 +1020,6 @@ function App() {
   const [me,      setMe]      = useState(null);
   const [loading, setLoading] = useState(!SETUP_NEEDED);
 
-  // Restore session
   useEffect(() => {
     if (SETUP_NEEDED) return;
     const s = localStorage.getItem('am_sess');
@@ -885,7 +1030,6 @@ function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Auto-kick if banned
   useEffect(() => {
     if (!me) return;
     const ref = FB.ref('banned/' + me);
