@@ -746,7 +746,7 @@ function MainApp({ me, onLogout }) {
         });
         await FB.ref('messages/general').push({
           author: '__system__',
-          content: '👋 Welcome to ArrowsMail! Anyone can sign up and chat in real-time from any device.',
+          content: 'Welcome to ArrowsMail! Anyone can sign up and chat in real-time from any device.',
           ts: t, sys: true,
         });
       }
