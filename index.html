@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+]<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -106,6 +106,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 .msg-grp{display:flex;gap:14px;padding:4px 22px;}
 .msg-grp:hover{background:rgba(255,255,255,.012);}
+.msg-grp:hover .msg-actions,.msg-cont:hover .msg-actions{opacity:1!important;}
 .msg-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;margin-top:2px;}
 .msg-body{flex:1;min-width:0;}
@@ -136,6 +137,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s;}
 .send-btn:hover{opacity:.85;}
 .send-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+.img-btn{width:32px;height:32px;background:none;border:none;color:#3a3a60;
+  font-size:20px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;transition:color .2s;padding:0;}
+.img-btn:hover{color:#5b8dee;}
+.img-preview-wrap{position:relative;display:inline-flex;margin:0 0 10px 4px;}
+.img-preview-thumb{max-height:110px;max-width:200px;border-radius:8px;
+  display:block;border:1px solid rgba(255,255,255,.12);}
+.img-preview-rm{position:absolute;top:-8px;right:-8px;width:20px;height:20px;
+  border-radius:50%;background:#ff4444;border:2px solid #111119;color:#fff;
+  font-size:12px;line-height:1;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;font-weight:700;}
+.img-preview-rm:hover{background:#cc2222;}
+.msg-img{max-width:340px;max-height:260px;border-radius:9px;display:block;
+  margin-top:6px;cursor:zoom-in;border:1px solid rgba(255,255,255,.07);
+  transition:opacity .15s;}
+.msg-img:hover{opacity:.88;}
+.lightbox-bg{position:fixed;inset:0;background:rgba(0,0,0,.93);
+  display:flex;align-items:center;justify-content:center;z-index:500;
+  cursor:zoom-out;animation:lbIn .15s ease;}
+@keyframes lbIn{from{opacity:0}to{opacity:1}}
+.lightbox-img{max-width:90vw;max-height:90vh;border-radius:10px;
+  box-shadow:0 8px 64px rgba(0,0,0,.9);object-fit:contain;}
+.lightbox-close{position:fixed;top:18px;right:22px;background:rgba(255,255,255,.1);
+  border:none;color:#fff;font-size:22px;width:38px;height:38px;border-radius:50%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;}
+.lightbox-close:hover{background:rgba(255,255,255,.2);}
+.upload-prog{font-size:12px;color:#5b8dee;padding:3px 0 6px 2px;display:flex;
+  align-items:center;gap:6px;}
 
 .no-ch{flex:1;display:flex;align-items:center;justify-content:center;
   flex-direction:column;gap:14px;}
@@ -237,6 +268,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .add-member-inp:focus{border-color:#5b8dee;}
 .panel-sug{margin-top:6px;max-height:200px;overflow-y:auto;}
 
+/* ── DM ── */
+.dm-badge{display:inline-block;min-width:18px;height:18px;border-radius:9px;
+  background:linear-gradient(135deg,#5b8dee,#a855f7);color:#fff;font-size:11px;
+  font-weight:800;text-align:center;line-height:18px;padding:0 5px;margin-left:auto;flex-shrink:0;}
+.online-dot{width:8px;height:8px;border-radius:50%;background:#43b581;flex-shrink:0;}
+.offline-dot{width:8px;height:8px;border-radius:50%;background:#555;flex-shrink:0;}
+
+/* ── Profile modal ── */
+.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;
+  border:3px solid transparent;transition:border-color .15s;flex-shrink:0;}
+.color-swatch.sel{border-color:#fff;}
+
 /* ── Setup screen ── */
 .setup-steps{color:#555;font-size:14px;line-height:1.9;margin-top:8px;}
 .setup-steps ol{padding-left:20px;}
@@ -321,6 +364,29 @@ function fmtDateLabel(ts) {
 async function hashPw(pw) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function compressImage(file, maxW = 1280, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) return reject(new Error('Not an image'));
+    if (file.size > 10 * 1024 * 1024) return reject(new Error('Image must be under 10 MB'));
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.onload = ev => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not load image'));
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -602,14 +668,58 @@ function CreateModal({ onClose, onCreate, allUsers, me }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   PROFILE MODAL
+═══════════════════════════════════════════════════════════════ */
+function ProfileModal({ me, userData, onClose, onSave }) {
+  const u = userData[me] || {};
+  const [dispName, setDispName] = useState(u.display || me);
+  const [color, setColor]       = useState(u.color   || avColor(me));
+  const [busy, setBusy]         = useState(false);
+  const save = async () => {
+    setBusy(true);
+    await onSave({ display: dispName.trim() || me, color });
+    onClose();
+    setBusy(false);
+  };
+  return (
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal">
+        <h3>✏ Edit Profile</h3>
+        <label>Display Name</label>
+        <input className="inp" value={dispName} onChange={e=>setDispName(e.target.value)} maxLength={30} />
+        <label>Avatar Color</label>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:18}}>
+          {AV_COLORS.map(c=>(
+            <div key={c} className={`color-swatch${color===c?' sel':''}`}
+              style={{background:c}} onClick={()=>setColor(c)} />
+          ))}
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+          <div className="av" style={{background:color,width:44,height:44,fontSize:20}}>
+            {(dispName||me)[0].toUpperCase()}
+          </div>
+          <span style={{color:'#888',fontSize:13}}>Preview</span>
+        </div>
+        <div className="modal-foot">
+          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-go" disabled={busy} onClick={save}>{busy?'Saving…':'Save'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
    SIDEBAR
 ═══════════════════════════════════════════════════════════════ */
-function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout, isOpen }) {
+function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout, isOpen, presence, onOpenProfile, onStartDM, unread }) {
   const pub = channels.filter(c => c.type === 'public');
   const grp = channels.filter(c => c.type === 'group');
+  const dms  = channels.filter(c => c.type === 'dm');
   const user    = userData[me] || {};
   const color   = user.color   || avColor(me);
   const display = user.display || me;
+  const isOnline = u => !!(presence && presence[u]);
 
   return (
     <div className={`sidebar${isOpen ? ' open' : ''}`}>
@@ -625,6 +735,7 @@ function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout, 
                onClick={() => onSelect(c.id)}>
             <span className="ch-sym">#</span>
             <span className="ch-nm">{c.name}</span>
+            {unread[c.id]>0&&<span className="dm-badge">{unread[c.id]>9?'9+':unread[c.id]}</span>}
           </div>
         ))}
 
@@ -635,13 +746,56 @@ function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout, 
                  onClick={() => onSelect(c.id)}>
               <span className="ch-sym" style={{ fontSize: 13 }}>👥</span>
               <span className="ch-nm">{c.name}</span>
+              {unread[c.id]>0&&<span className="dm-badge">{unread[c.id]>9?'9+':unread[c.id]}</span>}
             </div>
           ))}
         </>}
+
+        {dms.length > 0 && <>
+          <div className="sb-label" style={{ marginTop: 14 }}>Direct Messages</div>
+          {dms.map(c => {
+            const other = c.members.find(u=>u!==me) || c.name;
+            const ud = userData[other]||{};
+            const disp = ud.display||other;
+            const col  = ud.color  ||avColor(other);
+            return (
+              <div key={c.id} className={`ch-row${activeId===c.id?' act':''}`}
+                   onClick={() => onSelect(c.id)}>
+                <div style={{position:'relative',width:22,flexShrink:0}}>
+                  <div style={{width:22,height:22,borderRadius:'50%',background:col,
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    fontSize:11,fontWeight:800}}>
+                    {disp[0].toUpperCase()}
+                  </div>
+                  {isOnline(other)&&<div style={{position:'absolute',bottom:-1,right:-2,width:8,height:8,borderRadius:'50%',background:'#43b581',border:'1.5px solid #0a0a15'}}/>}
+                </div>
+                <span className="ch-nm">{disp}</span>
+                {unread[c.id]>0&&<span className="dm-badge">{unread[c.id]>9?'9+':unread[c.id]}</span>}
+              </div>
+            );
+          })}
+        </>}
+
+        <div className="sb-label" style={{ marginTop: 14 }}>Online Users</div>
+        {Object.keys(userData).filter(u=>u!==me&&isOnline(u)).slice(0,12).map(u=>{
+          const ud=userData[u]||{};
+          const disp=ud.display||u;
+          const col=ud.color||avColor(u);
+          return (
+            <div key={u} className="ch-row" onClick={()=>onStartDM(u)}
+                 title={`DM @${u}`}>
+              <div style={{position:'relative',width:22,flexShrink:0}}>
+                <div style={{width:22,height:22,borderRadius:'50%',background:col,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800}}>{disp[0].toUpperCase()}</div>
+                <div style={{position:'absolute',bottom:-1,right:-2,width:8,height:8,borderRadius:'50%',background:'#43b581',border:'1.5px solid #0a0a15'}}/>
+              </div>
+              <span className="ch-nm">{disp}</span>
+            </div>
+          );
+        })}
       </div>
 
       <div className="user-bar">
-        <div className="av" style={{ background: color }}>
+        <div className="av" style={{ background: color, cursor:'pointer' }} onClick={onOpenProfile} title="Edit profile">
           {display[0].toUpperCase()}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -660,17 +814,24 @@ function Sidebar({ channels, activeId, onSelect, onNew, me, userData, onLogout, 
 /* ═══════════════════════════════════════════════════════════════
    CHAT AREA
 ═══════════════════════════════════════════════════════════════ */
-function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMute, onBan, onPromote, onAddMember, allUsers, onOpenSidebar }) {
+function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMute, onBan, onPromote, onAddMember, allUsers, onOpenSidebar, onEditMsg, onDeleteMsg, onReact, presence }) {
   const [inp,           setInp]           = useState('');
   const [ctx,           setCtx]           = useState(null);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showMembers,   setShowMembers]   = useState(false);
   const [addInp,        setAddInp]        = useState('');
+  const [imgPreview,    setImgPreview]    = useState(null);
+  const [uploading,     setUploading]     = useState(false);
+  const [lightbox,      setLightbox]      = useState(null);
+  const [editingId,     setEditingId]     = useState(null);
+  const [editText,      setEditText]      = useState('');
+  const [emojiTarget,   setEmojiTarget]   = useState(null);
   const bottomRef        = useRef(null);
   const taRef            = useRef(null);
   const menuRef           = useRef(null);
   const addMemberPanelRef  = useRef(null);
   const membersPanelRef    = useRef(null);
+  const fileRef            = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -710,17 +871,37 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMu
   }, [showAddMember]);
 
   const send = useCallback(() => {
-    const t = inp.trim(); if (!t) return;
-    onSend(t); setInp('');
+    const t = inp.trim();
+    if (!t && !imgPreview) return;
+    onSend(t, imgPreview || null);
+    setInp(''); setImgPreview(null);
     if (taRef.current) {
       taRef.current.style.height = '22px';
       taRef.current.focus();
     }
-  }, [inp, onSend]);
+  }, [inp, imgPreview, onSend]);
 
   const onKey = e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
+
+  const pickFile = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    e.target.value = ''; setUploading(true);
+    try { setImgPreview(await compressImage(file)); }
+    catch(err) { alert(err.message); }
+    finally { setUploading(false); }
+  };
+
+  const saveEdit = (msgId) => {
+    const t = editText.trim(); if (!t) return;
+    onEditMsg(channel.id, msgId, t);
+    setEditingId(null); setEditText('');
+  };
+
+  const EMOJI_LIST = ['👍','❤️','😂','😮','😢','🔥','🎉','👎','😡','💯'];
+
+  const isOnline = u => !!(presence && presence[u]);
 
   const canModerate = me === OWNER || admins.includes(me);
   const openCtx = (e, author) => {
@@ -846,8 +1027,14 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMu
           return (
             <React.Fragment key={item.msgs[0].id}>
               <div className="msg-grp" onContextMenu={e => openCtx(e, item.author)}>
-                <div className="msg-av" style={{ background: color }}>
-                  {display[0].toUpperCase()}
+                <div style={{ position:'relative' }}>
+                  <div className="msg-av" style={{ background: color }}>
+                    {display[0].toUpperCase()}
+                  </div>
+                  {isOnline(item.author) && (
+                    <div style={{ position:'absolute',bottom:1,right:1,width:10,height:10,
+                      borderRadius:'50%',background:'#43b581',border:'2px solid #111119' }} />
+                  )}
                 </div>
                 <div className="msg-body">
                   <div className="msg-hdr">
@@ -855,15 +1042,91 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMu
                     {isOwner && <span className="owner-badge">Owner</span>}
                     {!isOwner && isAdmin && <span className="admin-badge">Admin</span>}
                     {isMutedUser && canModerate && <span className="muted-badge">MUTED</span>}
-                    <span className="msg-ts">{fmtTimestamp(item.msgs[0].ts)}</span>
+                    <span className="msg-ts">{fmtTimestamp(item.msgs[0].ts)}{item.msgs[0].edited && ' (edited)'}</span>
                   </div>
-                  <div className="msg-text">{item.msgs[0].content}</div>
+                  {editingId === item.msgs[0].id
+                    ? <div style={{display:'flex',gap:6,marginTop:2}}>
+                        <textarea className="msg-inp" style={{flex:1,background:'#1a1a28',border:'1px solid #5b8dee',borderRadius:7,padding:'6px 8px',resize:'none'}}
+                          value={editText} autoFocus
+                          onChange={e=>setEditText(e.target.value)}
+                          onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveEdit(item.msgs[0].id);}if(e.key==='Escape'){setEditingId(null);}}} />
+                        <button className="btn-go" style={{padding:'4px 12px',fontSize:13}} onClick={()=>saveEdit(item.msgs[0].id)}>Save</button>
+                        <button className="btn-cancel" style={{padding:'4px 10px',fontSize:13}} onClick={()=>setEditingId(null)}>Cancel</button>
+                      </div>
+                    : <div>
+                        <div className="msg-text">{item.msgs[0].content}</div>
+                        {item.msgs[0].image && <img className="msg-img" src={item.msgs[0].image} alt="img" onClick={()=>setLightbox(item.msgs[0].image)} />}
+                        {item.msgs[0].reactions && (
+                          <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:5}}>
+                            {Object.entries(item.msgs[0].reactions).map(([em,users])=>{
+                              const count=Object.keys(users).length; if(!count) return null;
+                              const reacted=users[me];
+                              return <span key={em} onClick={()=>onReact(channel.id,item.msgs[0].id,em)}
+                                style={{cursor:'pointer',fontSize:13,padding:'2px 7px',borderRadius:12,
+                                  background:reacted?'rgba(91,141,238,.22)':'rgba(255,255,255,.06)',
+                                  border:`1px solid ${reacted?'rgba(91,141,238,.4)':'rgba(255,255,255,.1)'}`,
+                                  color:'#ccc',userSelect:'none'}}>
+                                {em} {count}
+                              </span>;
+                            })}
+                          </div>
+                        )}
+                        <div style={{display:'flex',gap:4,marginTop:2,opacity:0}} className="msg-actions">
+                          {EMOJI_LIST.slice(0,4).map(em=>(
+                            <span key={em} onClick={()=>onReact(channel.id,item.msgs[0].id,em)}
+                              style={{cursor:'pointer',fontSize:15,padding:'1px 4px',borderRadius:5,background:'rgba(255,255,255,.05)',transition:'background .12s'}}
+                              title={'React '+em}>{em}</span>
+                          ))}
+                          <span onClick={()=>setEmojiTarget(emojiTarget===item.msgs[0].id?null:item.msgs[0].id)}
+                            style={{cursor:'pointer',fontSize:13,padding:'2px 6px',borderRadius:5,background:'rgba(255,255,255,.05)',color:'#888'}}>+</span>
+                          {item.author === me && <>
+                            <span style={{cursor:'pointer',fontSize:13,padding:'2px 5px',color:'#888'}} onClick={()=>{setEditingId(item.msgs[0].id);setEditText(item.msgs[0].content||'');}}>✏</span>
+                            <span style={{cursor:'pointer',fontSize:13,padding:'2px 5px',color:'#ff7070'}} onClick={()=>{if(window.confirm('Delete this message?'))onDeleteMsg(channel.id,item.msgs[0].id);}}>🗑</span>
+                          </>}
+                          {(me===OWNER||admins.includes(me))&&item.author!==me&&item.author!==OWNER&&(
+                            <span style={{cursor:'pointer',fontSize:13,padding:'2px 5px',color:'#ff7070'}} onClick={()=>{if(window.confirm('Delete this message?'))onDeleteMsg(channel.id,item.msgs[0].id);}}>🗑</span>
+                          )}
+                        </div>
+                        {emojiTarget===item.msgs[0].id&&(
+                          <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:4,padding:'6px 8px',background:'#1a1a28',borderRadius:9,border:'1px solid rgba(255,255,255,.08)',maxWidth:240}}>
+                            {EMOJI_LIST.map(em=><span key={em} style={{cursor:'pointer',fontSize:18,padding:'2px 4px'}} onClick={()=>{onReact(channel.id,item.msgs[0].id,em);setEmojiTarget(null);}}>{em}</span>)}
+                          </div>
+                        )}
+                      </div>
+                  }
                 </div>
               </div>
               {item.msgs.slice(1).map(m => (
                 <div key={m.id} className="msg-cont" onContextMenu={e => openCtx(e, item.author)}>
                   <div className="msg-pad" />
-                  <div className="msg-text-only">{m.content}</div>
+                  <div style={{flex:1}}>
+                    <div className="msg-text-only">{m.content}</div>
+                    {m.image && <img className="msg-img" src={m.image} alt="img" onClick={()=>setLightbox(m.image)} />}
+                    {m.reactions && (
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:5}}>
+                        {Object.entries(m.reactions).map(([em,users])=>{
+                          const count=Object.keys(users).length; if(!count) return null;
+                          const reacted=users[me];
+                          return <span key={em} onClick={()=>onReact(channel.id,m.id,em)}
+                            style={{cursor:'pointer',fontSize:13,padding:'2px 7px',borderRadius:12,
+                              background:reacted?'rgba(91,141,238,.22)':'rgba(255,255,255,.06)',
+                              border:`1px solid ${reacted?'rgba(91,141,238,.4)':'rgba(255,255,255,.1)'}`,
+                              color:'#ccc',userSelect:'none'}}>
+                            {em} {count}
+                          </span>;
+                        })}
+                      </div>
+                    )}
+                    <div style={{display:'flex',gap:4,marginTop:2,opacity:0}} className="msg-actions">
+                      {EMOJI_LIST.slice(0,4).map(em=>(
+                        <span key={em} onClick={()=>onReact(channel.id,m.id,em)} style={{cursor:'pointer',fontSize:15,padding:'1px 4px',borderRadius:5,background:'rgba(255,255,255,.05)'}}>{em}</span>
+                      ))}
+                      {m.author===me&&<>
+                        <span style={{cursor:'pointer',fontSize:13,padding:'2px 5px',color:'#888'}} onClick={()=>{setEditingId(m.id);setEditText(m.content||'');}}>✏</span>
+                        <span style={{cursor:'pointer',fontSize:13,padding:'2px 5px',color:'#ff7070'}} onClick={()=>{if(window.confirm('Delete?'))onDeleteMsg(channel.id,m.id);}}>🗑</span>
+                      </>}
+                    </div>
+                  </div>
                 </div>
               ))}
             </React.Fragment>
@@ -876,23 +1139,36 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMu
       <div className="input-area">
         {isMuted
           ? <div className="muted-bar">🔇 You have been muted</div>
-          : <div className="input-wrap">
-              <textarea
-                ref={taRef}
-                className="msg-inp"
-                placeholder={`Message #${channel.name}  (Shift+Enter for new line)`}
-                value={inp}
-                rows={1}
-                style={{ height: '22px' }}
-                onChange={e => {
-                  setInp(e.target.value);
-                  e.target.style.height = '22px';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                }}
-                onKeyDown={onKey}
-              />
-              <button className="send-btn" onClick={send} disabled={!inp.trim()}>↑</button>
-            </div>
+          : <>
+              <input type="file" accept="image/*" ref={fileRef} style={{display:'none'}} onChange={pickFile} />
+              {imgPreview && (
+                <div style={{paddingBottom:6}}>
+                  <div className="img-preview-wrap">
+                    <img className="img-preview-thumb" src={imgPreview} alt="preview" />
+                    <button className="img-preview-rm" onClick={()=>setImgPreview(null)}>×</button>
+                  </div>
+                </div>
+              )}
+              {uploading && <div className="upload-prog">⏳ Compressing image…</div>}
+              <div className="input-wrap">
+                <button className="img-btn" onClick={()=>fileRef.current.click()} title="Attach image">🖼</button>
+                <textarea
+                  ref={taRef}
+                  className="msg-inp"
+                  placeholder={`Message #${channel.name}  (Shift+Enter for new line)`}
+                  value={inp}
+                  rows={1}
+                  style={{ height: '22px' }}
+                  onChange={e => {
+                    setInp(e.target.value);
+                    e.target.style.height = '22px';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  }}
+                  onKeyDown={onKey}
+                />
+                <button className="send-btn" onClick={send} disabled={!inp.trim() && !imgPreview}>↑</button>
+              </div>
+            </>
         }
       </div>
 
@@ -916,6 +1192,13 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMu
           </div>
         </div>
       )}
+
+      {lightbox && (
+        <div className="lightbox-bg" onClick={()=>setLightbox(null)}>
+          <button className="lightbox-close" onClick={()=>setLightbox(null)}>×</button>
+          <img className="lightbox-img" src={lightbox} alt="full size" onClick={e=>e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
@@ -924,14 +1207,18 @@ function ChatArea({ channel, messages, onSend, me, userData, muted, admins, onMu
    MAIN APP
 ═══════════════════════════════════════════════════════════════ */
 function MainApp({ me, onLogout }) {
-  const [chs,       setChs]       = useState([]);
+  const [chs,         setChs]         = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [activeCh,  setActiveCh]  = useState('general');
-  const [msgs,      setMsgs]      = useState({});
-  const [users,     setUsers]     = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [muted,     setMuted]     = useState([]);
-  const [admins,    setAdmins]    = useState([]);
+  const [activeCh,    setActiveCh]    = useState('general');
+  const [msgs,        setMsgs]        = useState({});
+  const [users,       setUsers]       = useState({});
+  const [showModal,   setShowModal]   = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [muted,       setMuted]       = useState([]);
+  const [admins,      setAdmins]      = useState([]);
+  const [presence,    setPresence]    = useState({});
+  const [unread,      setUnread]      = useState({});
+  const lastSeenRef = useRef({});
 
   // Initialize default channels, then listen
   useEffect(() => {
@@ -1005,11 +1292,56 @@ function MainApp({ me, onLogout }) {
     return () => ref.off('value');
   }, []);
 
-  const sendMsg = useCallback(content => {
-    FB.ref('messages/' + activeCh).push({
-      author: me, content, ts: Date.now(),
+  // Presence: mark self online, remove on disconnect
+  useEffect(() => {
+    const ref = FB.ref('presence/' + me);
+    ref.set(Date.now());
+    ref.onDisconnect().remove();
+    const presRef = FB.ref('presence');
+    presRef.on('value', snap => setPresence(snap.val() || {}));
+    return () => { presRef.off('value'); ref.onDisconnect().cancel(); };
+  }, [me]);
+
+  // Unread badge: track last-seen per channel
+  useEffect(() => {
+    lastSeenRef.current[activeCh] = Date.now();
+    setUnread(p => ({ ...p, [activeCh]: 0 }));
+  }, [activeCh]);
+
+  useEffect(() => {
+    const allMsgs = msgs[activeCh] || [];
+    if (!allMsgs.length) return;
+    const lastTs = lastSeenRef.current[activeCh] || 0;
+    const newCount = allMsgs.filter(m => m.ts > lastTs && m.author !== me && !m.sys).length;
+    // only update unread for other channels
+    Object.keys(msgs).forEach(chId => {
+      if (chId === activeCh) return;
+      const ls = lastSeenRef.current[chId] || 0;
+      const count = (msgs[chId] || []).filter(m => m.ts > ls && m.author !== me && !m.sys).length;
+      setUnread(p => ({ ...p, [chId]: count }));
     });
+  }, [msgs, activeCh, me]);
+
+  const sendMsg = useCallback((content, image) => {
+    const payload = { author: me, content: content || '', ts: Date.now() };
+    if (image) payload.image = image;
+    FB.ref('messages/' + activeCh).push(payload);
   }, [me, activeCh]);
+
+  const editMsg = useCallback((chId, msgId, content) => {
+    FB.ref('messages/' + chId + '/' + msgId).update({ content, edited: true });
+  }, []);
+
+  const deleteMsg = useCallback((chId, msgId) => {
+    FB.ref('messages/' + chId + '/' + msgId).remove();
+  }, []);
+
+  const reactMsg = useCallback((chId, msgId, emoji) => {
+    const ref = FB.ref(`reactions/${chId}/${msgId}/${emoji}/${me}`);
+    ref.once('value').then(snap => {
+      if (snap.exists()) ref.remove(); else ref.set(true);
+    });
+  }, [me]);
 
   const createChannel = useCallback((name, type, members) => {
     const id = 'ch_' + genId();
@@ -1025,6 +1357,23 @@ function MainApp({ me, onLogout }) {
     setChs(prev => [...prev, { ...ch, members: membersArr }]);
     setActiveCh(id);
     setShowModal(false);
+  }, [me]);
+
+  const startDM = useCallback(otherUser => {
+    const pair = [me, otherUser].sort();
+    const dmId = 'dm_' + pair.join('_');
+    const existingCh = chs.find(c => c.id === dmId);
+    if (existingCh) { setActiveCh(dmId); setShowSidebar(false); return; }
+    const membersObj = { [me]: true, [otherUser]: true };
+    const now = Date.now();
+    const ch = { id: dmId, name: dmId, type: 'dm', members: membersObj, created_by: me, created: now };
+    FB.ref('channels/' + dmId).set(ch);
+    setActiveCh(dmId);
+    setShowSidebar(false);
+  }, [me, chs]);
+
+  const saveProfile = useCallback(async ({ display, color }) => {
+    await FB.ref('users/' + me).update({ display, color });
   }, [me]);
 
   const addMemberToGroup = useCallback((channelId, username) => {
@@ -1059,8 +1408,25 @@ function MainApp({ me, onLogout }) {
     }
   }, [admins]);
 
+  // Merge reactions into messages
+  const [reactions, setReactions] = useState({});
+  useEffect(() => {
+    const ref = FB.ref('reactions/' + activeCh);
+    ref.on('value', snap => setReactions(p => ({ ...p, [activeCh]: snap.val() || {} })));
+    return () => ref.off('value');
+  }, [activeCh]);
+
+  const messagesWithReactions = useMemo(() => {
+    const chMsgs = msgs[activeCh] || [];
+    const chReactions = reactions[activeCh] || {};
+    return chMsgs.map(m => ({ ...m, reactions: chReactions[m.id] || null }));
+  }, [msgs, reactions, activeCh]);
+
   const visible = useMemo(() =>
-    chs.filter(c => c.type === 'public' || (c.type === 'group' && c.members.includes(me))),
+    chs.filter(c =>
+      c.type === 'public' ||
+      ((c.type === 'group' || c.type === 'dm') && c.members.includes(me))
+    ),
     [chs, me]
   );
 
@@ -1077,14 +1443,20 @@ function MainApp({ me, onLogout }) {
         userData={users}
         onLogout={onLogout}
         isOpen={showSidebar}
+        presence={presence}
+        onOpenProfile={() => setShowProfile(true)}
+        onStartDM={startDM}
+        unread={unread}
       />
 
       {channel
-        ? <ChatArea channel={channel} messages={msgs[activeCh] || []} onSend={sendMsg}
+        ? <ChatArea channel={channel} messages={messagesWithReactions} onSend={sendMsg}
                     me={me} userData={users} muted={muted} admins={admins}
                     onMute={muteUser} onBan={banUser} onPromote={promoteAdmin}
                     onAddMember={addMemberToGroup} allUsers={users}
-                    onOpenSidebar={() => setShowSidebar(true)} />
+                    onOpenSidebar={() => setShowSidebar(true)}
+                    onEditMsg={editMsg} onDeleteMsg={deleteMsg} onReact={reactMsg}
+                    presence={presence} />
         : <div className="no-ch">
             <button className="mob-menu" style={{position:'absolute',top:9,left:12}}
                     onClick={() => setShowSidebar(true)}>☰</button>
@@ -1098,6 +1470,15 @@ function MainApp({ me, onLogout }) {
           onCreate={createChannel}
           allUsers={users}
           me={me}
+        />
+      )}
+
+      {showProfile && (
+        <ProfileModal
+          me={me}
+          userData={users}
+          onClose={() => setShowProfile(false)}
+          onSave={saveProfile}
         />
       )}
     </div>
