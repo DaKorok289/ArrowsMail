@@ -2488,12 +2488,8 @@ function RPGWorld({ me, userData, auraMap, onClose, onEarnAura, admins, userItem
       return;
     }
     const timer = setTimeout(() => {
-      FB.ref('minigame/state').once('value').then(snap => {
-        const st = snap.val();
-        if (!st || st.ppMatchStatus !== 'waiting') return;
-        const ang = (Math.random()*40-20)*Math.PI/180, dir = Math.random()>.5?1:-1;
-        FB.ref('minigame/state').update({ppMatchStatus:'playing',ppBall:{x:PP_W/2,y:PP_H/2,vx:PP_SPEED*dir*Math.cos(ang),vy:PP_SPEED*Math.sin(ang),ts:Date.now()},ppS1:0,ppS2:0});
-      });
+      const ang = (Math.random()*40-20)*Math.PI/180, dir = Math.random()>.5?1:-1;
+      FB.ref('minigame/state').update({ppMatchStatus:'playing',ppBall:{x:PP_W/2,y:PP_H/2,vx:PP_SPEED*dir*Math.cos(ang),vy:PP_SPEED*Math.sin(ang),ts:Date.now()},ppS1:0,ppS2:0});
     }, 2000);
     return () => clearTimeout(timer);
   }, [inMG, mgState?.ppMatchStatus, mgState?.ppRound, mgState?.ppMatch, mgState?.startedBy, me, isAdmin, ppAdvanceRound]);
